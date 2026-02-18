@@ -1,0 +1,206 @@
+// =====================
+// PARAMETERS
+// =====================
+
+@settings(defaultLengthUnit = mm)
+
+thickness = 4
+
+topSize = 140
+terminalWidth = 140
+terminalHeight = 70
+
+totalHeight = 350
+armLength = totalHeight - topSize - terminalHeight   // auto-calculated
+
+bottomWidth = 140
+vesa = 100
+vesaHole = 5
+
+endHole = 5
+endSpacing = 30
+endOffsetFromBottom = 25
+
+slotWidth = 50
+slotHeight = 5
+
+cornerRadius = 10
+
+
+// =====================
+// MAIN BODY (TOP PLATE + ARM + TERMINAL PLATE)
+// =====================
+
+// top plate
+topPlate = startSketchOn(XY)
+  |> rectangle(center = [topSize / 2, topSize / 2], width = topSize, height = topSize)
+  |> extrude(length = thickness)
+
+// arm
+arm = startSketchOn(XY)
+  |> rectangle(
+       center = [
+         bottomWidth / 2,
+         topSize + armLength / 2
+       ],
+       width = bottomWidth,
+       height = armLength,
+     )
+  |> extrude(length = thickness)
+
+// terminal plate
+terminalBaseY = topSize + armLength
+terminalCenterX = terminalWidth / 2
+terminalCenterY = terminalBaseY + terminalHeight / 2
+
+terminalPlate = startSketchOn(XY)
+  |> rectangle(center = [terminalCenterX, terminalCenterY], width = terminalWidth, height = terminalHeight)
+  |> extrude(length = thickness)
+
+// union
+body = union([topPlate, arm, terminalPlate])
+
+// =====================
+// VESA HOLES
+// =====================
+
+
+vesaCenterX = topSize / 2
+vesaCenterY = topSize / 2
+vesaOffset = vesa / 2
+
+hole1 = startSketchOn(XY)
+  |> circle(
+       center = [
+         vesaCenterX - vesaOffset,
+         vesaCenterY - vesaOffset
+       ],
+       radius = vesaHole / 2,
+     )
+  |> extrude(length = thickness)
+hole2 = startSketchOn(XY)
+  |> circle(
+       center = [
+         vesaCenterX - vesaOffset,
+         vesaCenterY + vesaOffset
+       ],
+       radius = vesaHole / 2,
+     )
+  |> extrude(length = thickness)
+hole3 = startSketchOn(XY)
+  |> circle(
+       center = [
+         vesaCenterX + vesaOffset,
+         vesaCenterY - vesaOffset
+       ],
+       radius = vesaHole / 2,
+     )
+  |> extrude(length = thickness)
+hole4 = startSketchOn(XY)
+  |> circle(
+       center = [
+         vesaCenterX + vesaOffset,
+         vesaCenterY + vesaOffset
+       ],
+       radius = vesaHole / 2,
+     )
+  |> extrude(length = thickness)
+
+// =====================
+// TERMINAL HOLES + SLOTS (CENTERED GROUP)
+// =====================
+
+radius = endHole / 2
+
+// spacing from center
+colSpacing = 30
+rowSpacing = 25
+
+// column centers
+col1X = terminalCenterX - colSpacing
+col2X = terminalCenterX
+col3X = terminalCenterX + colSpacing
+
+// row centers
+row1Y = terminalCenterY - (rowSpacing / 2)
+row2Y = terminalCenterY + rowSpacing / 2
+
+// holes
+hole_c1_r1 = startSketchOn(XY)
+  |> circle(center = [col1X, row1Y], radius = radius)
+  |> extrude(length = thickness)
+hole_c1_r2 = startSketchOn(XY)
+  |> circle(center = [col1X, row2Y], radius = radius)
+  |> extrude(length = thickness)
+
+hole_c2_r1 = startSketchOn(XY)
+  |> circle(center = [col2X, row1Y], radius = radius)
+  |> extrude(length = thickness)
+hole_c2_r2 = startSketchOn(XY)
+  |> circle(center = [col2X, row2Y], radius = radius)
+  |> extrude(length = thickness)
+
+hole_c3_r1 = startSketchOn(XY)
+  |> circle(center = [col3X, row1Y], radius = radius)
+  |> extrude(length = thickness)
+hole_c3_r2 = startSketchOn(XY)
+  |> circle(center = [col3X, row2Y], radius = radius)
+  |> extrude(length = thickness)
+
+// slots centered between columns
+slotCenterY = terminalCenterY
+
+slot_c1 = startSketchOn(XY)
+  |> rectangle(
+       center = [
+         terminalCenterX - (colSpacing / 2),
+         slotCenterY
+       ],
+       width = slotHeight,
+       height = slotWidth,
+     )
+  |> extrude(length = thickness)
+
+slot_c2 = startSketchOn(XY)
+  |> rectangle(
+       center = [
+         terminalCenterX + colSpacing / 2,
+         slotCenterY
+       ],
+       width = slotHeight,
+       height = slotWidth,
+     )
+  |> extrude(length = thickness)
+
+// =====================
+// BOOLEAN SUBTRACT
+// =====================
+
+
+holes = union([
+  hole_c1_r1,
+  hole_c1_r2,
+  hole_c2_r1,
+  hole_c2_r2,
+  hole_c3_r1,
+  hole_c3_r2
+])
+
+slots = union([slot_c1, slot_c2])
+
+finalBody = body
+  |> subtract(tools = [
+       hole1,
+       hole2,
+       hole3,
+       hole4,
+       holes,
+       slots
+     ])
+
+// =====================
+// RESULT
+// =====================
+
+
+finalBody
